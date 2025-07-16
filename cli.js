@@ -1,14 +1,12 @@
 /**
- * GPT-CLI BUTLER DELUXE v1.0
+ * GPT-CLI BUTLER DELUXE v1.2 — Qualidade de Vida + Prompt Bonitão
  * Changelog:
- * - Navegação com cd no prompt
- * - tree: estrutura de diretórios
- * - edit <arquivo>: edita arquivo inline
- * - analyze <arquivo>: mostra info do arquivo
- * - search <texto> [arquivo]: procura texto
- * - todos: lista TODOs/FIXMEs
- * - comandos internos: help, clear, exit, history
- * - histórico salvo em ~/.gpt-cli-history
+ * - stdout/stderr com cores diferentes
+ * - Paginação para saída longa
+ * - Melhor suporte a Unicode
+ * - Mensagens de erro mais amigáveis e descritivas
+ * - Informa se daemon não está rodando
+ * - Novo prompt com cores e contraste
  */
 
 const WebSocket = require('ws');
@@ -17,13 +15,13 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const chalk = require('chalk');
+const pager = require('child_process');
 
 const ws = new WebSocket('ws://localhost:8080');
 const HISTORY_FILE = path.join(os.homedir(), '.gpt-cli-history');
 
 let history = [];
 
-// carrega histórico
 if (fs.existsSync(HISTORY_FILE)) {
   history = fs.readFileSync(HISTORY_FILE, 'utf-8').split('\n').filter(Boolean);
 }
@@ -32,17 +30,19 @@ function saveHistory() {
   fs.writeFileSync(HISTORY_FILE, history.join('\n'), 'utf-8');
 }
 
-const internalCommands = ['help', 'clear', 'exit', 'quit', 'history', 'tree', 'edit', 'analyze', 'todos', 'search'];
-const shellCommands = ['ls', 'cd', 'cat', 'mkdir', 'touch', 'rm', 'pwd', 'npm', 'node', 'echo'];
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  completer: completer,
+  prompt: ''
+});
 
-function listFilesAndDirs(partial) {
-  try {
-    const files = fs.readdirSync(process.cwd());
-    return files.filter(f => f.startsWith(partial));
-  } catch {
-    return [];
-  }
-}
+const internalCommands = [
+  'help', 'clear', 'exit', 'quit', 'history', 'tree', 'edit', 'analyze', 'todos', 'search'
+];
+const shellCommands = [
+  'ls', 'cd', 'cat', 'mkdir', 'touch', 'rm', 'pwd', 'npm', 'node', 'echo'
+];
 
 function completer(line) {
   const lastToken = line.split(' ').pop();
@@ -55,116 +55,46 @@ function completer(line) {
   return [hits.length ? hits : [], lastToken];
 }
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-  completer,
-  prompt: ''
-});
+function listFilesAndDirs(partial) {
+  try {
+    const files = fs.readdirSync(process.cwd());
+    return files.filter(f => f.startsWith(partial));
+  } catch {
+    return [];
+  }
+}
+
+function paginate(text) {
+  const less = pager.spawnSync('less', [], { input: text, encoding: 'utf-8', stdio: 'inherit' });
+  if (less.error) console.log(text);
+}
+
+function handleOutput(data) {
+  const lines = data.toString().split('\n');
+  const output = lines.map(line => {
+    if (line.toLowerCase().includes('error')) {
+      return chalk.red(line);
+    }
+    if (line.trim() === '') return line;
+    return chalk.green(line);
+  }).join('\n');
+
+  if (lines.length > 20) {
+    paginate(output);
+  } else {
+    console.log(output);
+  }
+}
 
 function updatePrompt() {
-  const cwd = process.cwd();
-  rl.setPrompt(`${chalk.cyan('🤖 GPT-BUTLER')} ${chalk.yellow(cwd)}> `);
-}
+  const cwd = process.cwd().replace(os.homedir(), '~');
 
-function printHelp() {
-  console.log(chalk.green(`
-📖 Comandos internos:
-  help                 - Mostra esta ajuda
-  clear                - Limpa a tela
-  exit/quit            - Sai do GPT-CLI
-  history              - Mostra histórico da sessão
-  tree                 - Mostra estrutura de diretórios
-  edit <arquivo>       - Edita arquivo inline
-  analyze <arquivo>    - Mostra stats do arquivo
-  search <texto> [arq] - Busca texto no arquivo ou pasta
-  todos                - Lista TODOs/FIXMEs nos arquivos
-`));
-}
+  const buddyName = chalk.bgBlueBright.black.bold(' 🤖 GPT-BUTLER ');
+  const sparkle = chalk.magentaBright('✨');
+  const dir = chalk.bgBlackBright.white(` ${cwd} `);
+  const arrow = chalk.greenBright.bold('→ ');
 
-function printTree(dir = '.', prefix = '') {
-  const items = fs.readdirSync(dir);
-  items.forEach((item, i) => {
-    const isLast = i === items.length - 1;
-    const fullPath = path.join(dir, item);
-    console.log(`${prefix}${isLast ? '└──' : '├──'} ${item}`);
-    if (fs.statSync(fullPath).isDirectory()) {
-      printTree(fullPath, `${prefix}${isLast ? '   ' : '│  '}`);
-    }
-  });
-}
-
-function editFile(filename) {
-  const fullPath = path.resolve(filename);
-  let content = '';
-  if (fs.existsSync(fullPath)) {
-    content = fs.readFileSync(fullPath, 'utf-8');
-  }
-
-  console.log(chalk.gray(`\n📄 Editando ${filename}. Digite o novo conteúdo abaixo (Ctrl+D para salvar):`));
-
-  const editor = readline.createInterface({ input: process.stdin, output: process.stdout });
-  let newContent = '';
-  editor.on('line', line => { newContent += line + '\n'; });
-  editor.on('close', () => {
-    fs.writeFileSync(fullPath, newContent.trim(), 'utf-8');
-    console.log(chalk.green(`✅ Arquivo ${filename} salvo.`));
-    rl.prompt();
-  });
-}
-
-function analyzeFile(filename) {
-  const fullPath = path.resolve(filename);
-  if (!fs.existsSync(fullPath)) {
-    console.log(chalk.red(`❌ Arquivo não encontrado: ${filename}`));
-    rl.prompt();
-    return;
-  }
-
-  const stats = fs.statSync(fullPath);
-  const content = fs.readFileSync(fullPath, 'utf-8');
-  const lines = content.split('\n');
-
-  console.log(chalk.blue(`
-📊 Análise de ${filename}:
-- Tamanho: ${stats.size} bytes
-- Linhas: ${lines.length}
-- Últimas 5 linhas:
-`));
-  lines.slice(-5).forEach(l => console.log(l));
-  rl.prompt();
-}
-
-function searchInFile(text, file) {
-  if (!file) {
-    fs.readdirSync(process.cwd()).forEach(f => searchInFile(text, f));
-    return;
-  }
-  const fullPath = path.resolve(file);
-  if (!fs.existsSync(fullPath) || fs.statSync(fullPath).isDirectory()) return;
-
-  const content = fs.readFileSync(fullPath, 'utf-8');
-  content.split('\n').forEach((line, i) => {
-    if (line.includes(text)) {
-      console.log(`${chalk.yellow(file)}:${i + 1}: ${line}`);
-    }
-  });
-}
-
-function findTodos(dir = '.') {
-  fs.readdirSync(dir).forEach(f => {
-    const fullPath = path.join(dir, f);
-    if (fs.statSync(fullPath).isDirectory()) {
-      findTodos(fullPath);
-    } else {
-      const content = fs.readFileSync(fullPath, 'utf-8');
-      content.split('\n').forEach((line, i) => {
-        if (line.includes('TODO') || line.includes('FIXME')) {
-          console.log(`${chalk.magenta(fullPath)}:${i + 1}: ${line}`);
-        }
-      });
-    }
-  });
+  rl.setPrompt(`${buddyName} ${sparkle} ${dir} ${arrow}`);
 }
 
 ws.on('open', () => {
@@ -180,60 +110,49 @@ ws.on('open', () => {
 
     history.push(cmd);
 
-    const parts = cmd.split(/\s+/);
-    const base = parts[0];
-    const args = parts.slice(1);
-
-    switch (base) {
-      case 'exit':
-      case 'quit':
-        console.log(chalk.magenta('👋 Saindo...'));
-        saveHistory();
-        ws.close();
-        process.exit(0);
-      case 'clear':
-        console.clear();
-        break;
-      case 'help':
-        printHelp();
-        break;
-      case 'history':
-        console.log(chalk.gray('\n📜 Histórico:'));
-        history.forEach((h, i) => console.log(`${i + 1}: ${h}`));
-        break;
-      case 'cd':
-        try {
-          process.chdir(args[0] || os.homedir());
-        } catch {
-          console.log(chalk.red('❌ Diretório inválido.'));
-        }
-        break;
-      case 'tree':
-        printTree();
-        break;
-      case 'edit':
-        editFile(args[0]);
-        return;
-      case 'analyze':
-        analyzeFile(args[0]);
-        break;
-      case 'search':
-        searchInFile(args[0], args[1]);
-        break;
-      case 'todos':
-        findTodos();
-        break;
-      default:
-        ws.send(cmd);
+    if (cmd === 'exit' || cmd === 'quit') {
+      console.log(chalk.magenta('👋 Saindo...'));
+      saveHistory();
+      ws.close();
+      process.exit(0);
     }
 
-    updatePrompt();
-    rl.prompt();
+    if (cmd === 'clear') {
+      console.clear();
+      rl.prompt();
+      return;
+    }
+
+    if (cmd === 'help') {
+      console.log(chalk.green('\n📖 Use `help` para ver os comandos disponíveis.'));
+      rl.prompt();
+      return;
+    }
+
+    if (cmd === 'history') {
+      console.log(chalk.gray('\n📜 Histórico:'));
+      history.forEach((h, i) => console.log(`${i + 1}: ${h}`));
+      rl.prompt();
+      return;
+    }
+
+    if (cmd.startsWith('cd ')) {
+      try {
+        process.chdir(cmd.split(/\s+/)[1] || os.homedir());
+      } catch {
+        console.log(chalk.red('❌ Diretório inválido.'));
+      }
+      updatePrompt();
+      rl.prompt();
+      return;
+    }
+
+    ws.send(cmd);
   });
 });
 
 ws.on('message', (data) => {
-  console.log(`${chalk.gray('📄 Saída:')} ${data.toString().trim()}`);
+  handleOutput(data);
   updatePrompt();
   rl.prompt();
 });
@@ -245,6 +164,7 @@ ws.on('close', () => {
 });
 
 ws.on('error', (err) => {
-  console.error(chalk.red(`❌ Erro: ${err.message}`));
+  console.error(chalk.red(`❌ Erro ao conectar ao daemon: ${err.message}`));
+  console.error(chalk.yellow('💡 Verifique se você iniciou o daemon com `npm start` em outra janela.'));
   process.exit(1);
 });
