@@ -1,0 +1,14 @@
+{
+  "name": "chatgpt-cli-mode",
+  "version": "0.1.0",
+  "description": "MVP de um daemon local para ChatGPT CLI Mode — executa comandos via WebSocket.",
+  "main": "daemon/index.js",
+  "scripts": {
+    "start": "node daemon/index.js"
+  },
+  "author": "Juan Carlos (e o GPT que aguenta)",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.13.0"
+  }
+}
