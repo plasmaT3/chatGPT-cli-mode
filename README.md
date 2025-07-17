@@ -1,26 +1,44 @@
-# 🤖 ChatGPT CLI Mode — MVP
+# 🤖 GPT-Butler CLI Deluxe™
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)  
-[![Node.js](https://img.shields.io/badge/node-%3E=18.x-brightgreen)](https://nodejs.org/)  
-
-💻 Daemon + cliente CLI para transformar o ChatGPT em um verdadeiro code buddy local que executa comandos no seu terminal via WebSocket, com logs e inicialização fácil.  
-Feito para uso pessoal, mas aberto para quem quiser evoluir junto. 🚀  
+Um assistente de linha de comando projetado para ser seu *code buddy* pessoal: rápido, útil e com memória.  
+Desenvolvido para desenvolvedores que não aguentam mais Ctrl+C/Ctrl+V.
 
 ---
 
-## 📋 O que é isso?
+## 🚀 Funcionalidades
 
-Um MVP para validar a ideia de ter um **modo CLI para o ChatGPT**, onde ele:
-- Executa comandos no seu terminal.
-- Retorna a saída em tempo real.
-- Loga tudo em arquivos.
-- Inicializa em 2 janelas com script PowerShell anti-burro™.
+✅ Prompt colorido e elegante com informações do diretório atual.  
+✅ Histórico persistente entre sessões.  
+✅ Memória de sessão (`.gpt-butler-session.json`) com:
+  - Diretório base
+  - Comandos executados
+  - Arquivos modificados
+✅ Paginação automática para saídas longas.  
+✅ Saída colorida: stdout/stderr com contraste.  
+✅ Mensagens de erro amigáveis.  
+✅ Atualização do próprio `cli.js` diretamente pelo terminal!
 
 ---
 
-## 🚀 Como rodar
+## 📋 Comandos internos
 
+| Comando                | O que faz                                     |
+|-------------------------|-----------------------------------------------|
+| `help`                 | Mostra os comandos internos disponíveis      |
+| `clear`                | Limpa o terminal                             |
+| `exit` / `quit`        | Encerra a sessão                             |
+| `history`              | Lista o histórico geral (`~/.gpt-cli-history`) |
+| `context`              | Exibe o estado atual da sessão (`.gpt-butler-session.json`) |
+| `self-update`          | Atualiza o `cli.js` usando `cli.update.js`   |
+| `update-from-remote <url>` | Baixa patch de uma URL e atualiza automaticamente |
+| `cd <dir>`             | Muda de diretório                            |
+
+---
+
+## 🎯 Como atualizar o Butler
+
+### 🔷 Método local (manual)
+1️⃣ Receba um novo `cli.js` (fornecido por mim).  
+2️⃣ Salve como:
 ```bash
-git clone https://github.com/plasmaT3/chatGPT-cli-mode.git
-cd chatGPT-cli-mode
-.\start_gpt_cli.ps1
+cli.update.js
