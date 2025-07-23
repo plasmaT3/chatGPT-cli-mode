@@ -1,71 +1,47 @@
-# 🤖 GPT-Butler CLI Deluxe™ — v1.8
+# 🚀 GPT‑Butler CLI — v3.0 (Servidor Colaborativo)
 
-Um assistente de linha de comando projetado para ser seu *code buddy* pessoal: rápido, útil, com memória, e agora ainda mais inteligente.  
-Desenvolvido para desenvolvedores que não aguentam mais Ctrl+C/Ctrl+V e querem poder no terminal.
+*"Não sabendo que era impossível, foi lá e fez."* — Jean Cocteau
 
----
-
-## 🚀 Funcionalidades
-
-✅ Prompt colorido e elegante com informações do diretório atual  
-✅ Histórico persistente entre sessões  
-✅ Memória de sessão (`.gpt-butler-session.json`) com:
-  - Diretório base
-  - Comandos executados
-  - Arquivos modificados
-✅ Paginação automática para saídas longas  
-✅ Saída colorida: stdout/stderr com contraste  
-✅ Mensagens de erro amigáveis  
-✅ Atualização do próprio `cli.js` diretamente pelo terminal  
-✅ Diagnóstico do projeto com `analyze-project` (GPT‑3.5 + streaming)  
-✅ Implementação automática de mudanças com `implement "<pedido>"` (GPT‑4o)  
-✅ Respostas em tempo real no terminal (modo streaming)  
-✅ Fallback inteligente para economizar créditos: diagnóstico com 3.5, código com 4o  
+Um **servidor colaborativo com ChatGPT multiusuário** via WebSocket, com histórico persistente, comandos inteligentes e um autoimplementador que analisa, sugere e aplica mudanças no código sozinho.
 
 ---
 
-## 📋 Comandos internos
+## ✨ Funcionalidades
 
-| Comando                        | O que faz |
-|--------------------------------|-----------------------------------------------|
-| `help`                         | Mostra os comandos internos disponíveis |
-| `clear`                        | Limpa o terminal |
-| `exit` / `quit`                | Encerra a sessão |
-| `history`                      | Lista o histórico geral (`~/.gpt-cli-history`) |
-| `context`                      | Exibe o estado atual da sessão |
-| `self-update`                  | Atualiza o `cli.js` usando `cli.update.js` |
-| `update-from-remote <url>`     | Baixa patch de uma URL e atualiza automaticamente |
-| `cd <dir>`                     | Muda de diretório |
-| `gpt <mensagem>`               | Faz uma pergunta ao GPT‑4o |
-| `analyze-project`              | Diagnostica o estado do projeto com GPT‑3.5 |
-| `implement "<pedido>"`         | Gera e aplica mudanças no código com GPT‑4o |
+✅ **Multiusuário**  
+✅ **Histórico persistente**  
+✅ **Comandos interativos**:
+- `/analyze` → analisa o projeto e sugere melhorias
+- `/implement` → gera código para melhorias solicitadas
+- `/gptfree` → responde perguntas simples
+- `/natural` → transforma frase em comando shell seguro
+✅ **Autoimplementador**:
+- basta dizer: *"varre a pasta X e atualiza com suas sugestões"*
+- ele analisa, gera alterações, salva e testa
 
 ---
 
-## 🎯 Como usar
+## ⚡ Como rodar
 
-1️⃣ Clone e instale:
-git clone https://github.com/seurepo/chatGPT-cli-mode.git
-cd chatGPT-cli-mode
+1️⃣ **Instale as dependências:**
+```bash
 npm install
 
 2️⃣ Configure sua chave OpenAI:
-cp .env.example .env
-# edite e coloque sua chave OPENAI_API_KEY
+Crie um arquivo .env na raiz com:
 
-3️⃣ Suba tudo:
-.\start_gpt_cli.ps1
+OPENAI_API_KEY=sua-chave-aqui
 
-ou, para pular instalação de dependências:
-.\start_gpt_cli.ps1 --SkipInstall
+3️⃣ Inicie o servidor:
+npm start
 
-🎨 Roadmap
-✨ Dry‑run para revisar alterações antes de salvar
-✨ Suporte a voz
-✨ Relatórios de uso e estatísticas
-✨ Múltiplos temas para o prompt
-✨ Execução offline com LLM local
+## 🎬 Demonstração
+📽️ [Assista ao vídeo no YouTube](https://youtu.be/YBueJw0_Te4)
+
+👨‍💻 Como os clientes se conectam
+Rode o cli.js ou demo_cli.ps1 para simular.
+O cliente pede IP/porta, nome do usuário e permite enviar mensagens ou comandos.
 
 📄 Licença
 MIT — use, melhore e compartilhe.
-
+"Não sabendo que era impossível, foi lá e fez." — Jean Cocteau
