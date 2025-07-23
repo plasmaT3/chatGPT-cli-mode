@@ -4,6 +4,13 @@ const chalk = require('chalk');
 const ora = require('ora');
 const { handleInternal, internalCommands } = require('./lib/commands/internal');
 
+// Novos comandos:
+const { analyzeCode } = require('./commands/analyze-code');
+const { loadContext, listContextKeys, clearContext } = require('./commands/context-load');
+const { grepGPT } = require('./commands/grep-gpt');
+const { summarizeProject } = require('./commands/summarize-project');
+const { refactorSmart } = require('./commands/refactor-smart');
+
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 let ws, username = 'anon';
 
@@ -71,20 +78,56 @@ function showMenu() {
 
 function startChat() {
   console.log(chalk.gray('(Digite sua mensagem ou comando e pressione Enter) 💬'));
-  rl.on('line', line => {
-    const cmd = line.trim().split(' ')[0].replace('/', '');
+  rl.on('line', async line => {
+    const input = line.trim();
+
+    if (!input) return;
+
+    const [cmd, ...args] = input.startsWith('/') ? input.substring(1).split(' ') : [null];
+
     if (internalCommands.includes(cmd)) {
       handleInternal(cmd, rl);
       return;
     }
 
-    if (line.startsWith('/')) {
-      const [cmd, ...args] = line.trim().substring(1).split(' ');
+    if (cmd) {
       const spinner = ora(`⏳ Executando /${cmd}…`).start();
-      ws.send(JSON.stringify({ action: cmd, user: username, payload: args.join(' ') }));
+      try {
+        // 🔌 Comandos locais personalizados
+        switch (cmd) {
+          case 'analyze-code':
+            await analyzeCode(args[0]);
+            break;
+          case 'context-load':
+            await loadContext(args[0], args[1]);
+            break;
+          case 'context-list':
+            console.log(chalk.cyan(`🔑 Contextos ativos: ${listContextKeys().join(', ')}`));
+            break;
+          case 'context-clear':
+            clearContext();
+            break;
+          case 'grep-gpt':
+            await grepGPT(args.join(' '));
+            break;
+          case 'summarize-project':
+            await summarizeProject(args[0] || '.');
+            break;
+          case 'refactor':
+            const file = args[0];
+            const goal = args[2] || 'legibilidade';
+            const apply = args.includes('--apply');
+            await refactorSmart(file, goal, apply);
+            break;
+          default:
+            ws.send(JSON.stringify({ action: cmd, user: username, payload: args.join(' ') }));
+        }
+      } catch (err) {
+        console.log(chalk.red(`Erro ao executar /${cmd}: ${err.message}`));
+      }
       spinner.stop();
     } else {
-      ws.send(JSON.stringify({ user: username, text: line.trim() }));
+      ws.send(JSON.stringify({ user: username, text: input }));
     }
   });
 }
