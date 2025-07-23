@@ -1,64 +1,38 @@
-param (
-    [switch]$SkipInstall,
-    [switch]$Global
-)
+# ===========================================
+# 🚀 GPT‑Butler CLI — v3.0 Starter Script
+# ===========================================
 
-Write-Host "`n🚀 Iniciando GPT-Butler Deluxe™ (LUXO™ v2)..." -ForegroundColor Cyan
+Write-Host "==============================="
+Write-Host " GPT‑Butler CLI — v3.0 "
+Write-Host " Servidor colaborativo "
+Write-Host "==============================="
 
-cd -Path (Split-Path -Parent $MyInvocation.MyCommand.Definition)
+# verifica se package.json existe
+if (-not (Test-Path -Path ".\package.json")) {
+    Write-Error "❌ Este script deve ser executado na raiz do projeto (onde está o package.json)."
+    exit 1
+}
 
-if (-not $SkipInstall) {
-    if (-not (Test-Path "node_modules")) {
-        Write-Host "📦 Dependências não encontradas. Instalando..." -ForegroundColor Yellow
-        npm install
-    } else {
-        Write-Host "✅ Dependências encontradas. Pulando instalação." -ForegroundColor Green
-    }
+# instala dependências caso necessário
+if (-not (Test-Path -Path ".\node_modules")) {
+    Write-Host "📦 Instalando dependências..."
+    npm install
 } else {
-    Write-Host "⏭️ Instalação de dependências pulada por flag." -ForegroundColor Yellow
+    Write-Host "📦 Dependências já instaladas."
 }
 
-if ($Global) {
-    Write-Host "🌐 Instalando GPT‑Butler como CLI global..." -ForegroundColor Cyan
-    npm link
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "✅ Agora você pode rodar com o comando: gpt-butler" -ForegroundColor Green
-    } else {
-        Write-Host "❌ Falha ao registrar como global." -ForegroundColor Red
-    }
+# verifica .env
+if (-not (Test-Path -Path ".\.env")) {
+    Write-Warning "⚠️ Arquivo .env não encontrado! Crie um com sua OPENAI_API_KEY."
+    exit 1
 }
 
-$ps7 = Get-Command pwsh -ErrorAction SilentlyContinue
-
-if ($ps7) {
-    Write-Host "⚡ Preferindo PowerShell 7+ (pwsh)..." -ForegroundColor Green
-    $shell = "pwsh"
-} else {
-    Write-Host "⚠️ PowerShell 7+ não encontrado. Usando PowerShell clássico." -ForegroundColor Yellow
-    $shell = "powershell"
-}
-
-function Test-Daemon {
-    $daemonRunning = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "*node*" -and $_.StartInfo.Arguments -match "daemon" }
-    return $daemonRunning
-}
-
-if (Test-Daemon) {
-    Write-Host "✅ Daemon já está rodando. Não abrindo outra instância." -ForegroundColor Green
-} else {
-    Write-Host "🎯 Subindo o daemon em uma nova janela..." -ForegroundColor Green
-    Start-Process $shell -ArgumentList "-NoExit", "-Command", "npm start" -WindowStyle Normal
-    Write-Host "📝 Daemon iniciado."
-}
+# inicia o servidor em uma aba atual ou invisível
+Write-Host "🚀 Iniciando servidor colaborativo..."
+Start-Process -NoNewWindow pwsh -ArgumentList "npm start"
 
 Start-Sleep -Seconds 2
 
-Write-Host "🎯 Subindo o cliente CLI em uma nova janela..." -ForegroundColor Green
-Start-Process $shell -ArgumentList "-NoExit", "-Command", "npm run cli" -WindowStyle Normal
-Write-Host "📝 Cliente iniciado."
-
-Write-Host "`n✨ GPT-Butler Deluxe™ LUXO™ v2 está ao seu dispor! 👨‍💻" -ForegroundColor Cyan
-Write-Host "📋 Flags disponíveis:" -ForegroundColor Yellow
-Write-Host "   --SkipInstall   → pula instalação de dependências"
-Write-Host "   --Global        → instala como CLI global (npm link)"
-Write-Host ""
+# abre novo terminal para o cliente no PowerShell 7 e mantém aberto no final
+Write-Host "🖥️ Abrindo cliente em uma nova janela (pwsh)..."
+Start-Process pwsh -ArgumentList '-NoExit', '-Command', 'node cli.js'
